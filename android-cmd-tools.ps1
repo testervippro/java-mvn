@@ -74,8 +74,9 @@ foreach ($pkg in $packages) {
     Install-PackageIfMissing $pkg
 }
 
-# Accept licenses
-& $sdkmanager --licenses --sdk_root="$androidSdkRoot" | ForEach-Object { $_ }
+# Accept licenses automatically
+Write-Host "📝 Accepting all SDK licenses..."
+"y" | & $sdkmanager --licenses --sdk_root="$androidSdkRoot"
 
 # Create AVD
 $avdmanager = "$cmdlineToolsPath\bin\avdmanager.bat"
