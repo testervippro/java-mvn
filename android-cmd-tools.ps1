@@ -1,4 +1,7 @@
-
+# ===============================
+# Minimal Android SDK Setup (Windows) + PATH Check
+# Author: Mesaque (Extended by ChatGPT)
+# ===============================
 
 # Config
 $androidZipUrl = "https://dl.google.com/android/repository/commandlinetools-win-9477386_latest.zip"
@@ -7,7 +10,7 @@ $androidSdkRoot = "C:\Android\android_sdk"
 $cmdlineTempPath = "$androidSdkRoot\cmdline-tools\temp"
 $cmdlineToolsPath = "$androidSdkRoot\cmdline-tools\latest"
 $buildToolsVersion = "34.0.0"
-$avdName = "demo"
+$avdName = "pixel_6a_avd"
 $systemImage = "system-images;android-30;google_apis;x86_64"
 
 # Ensure SDK root
