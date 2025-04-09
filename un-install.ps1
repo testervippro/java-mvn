@@ -1,28 +1,55 @@
+# ===================== CHECK & SET EXECUTION POLICY =====================
+$currentPolicy = Get-ExecutionPolicy -Scope Process
+if ($currentPolicy -notin @("Bypass", "RemoteSigned")) {
+    Write-Host "Current Execution Policy: $currentPolicy"
+    $policyChoice = Read-Host "Select policy to apply [B]ypass or [R]emoteSigned (B/R):"
+    switch ($policyChoice.ToUpper()) {
+        "B" {
+            Set-ExecutionPolicy Bypass -Scope Process -Force
+            Write-Host "Execution policy set to Bypass"
+        }
+        "R" {
+            Set-ExecutionPolicy RemoteSigned -Scope Process -Force
+            Write-Host "Execution policy set to RemoteSigned"
+        }
+        default {
+            Write-Host "Invalid choice. Exiting."
+            Exit
+        }
+    }
+}
+
 # ===================== UNINSTALL JAVA JDK =====================
 $javaHome = "C:\Program Files\Java\jdk-17"
 $javaInstaller = "$env:USERPROFILE\Downloads\jdk-17-installer.exe"
+
 if (Test-Path $javaHome) {
     Write-Host "Removing Java directory: $javaHome"
     Remove-Item -Recurse -Force $javaHome
 }
+
 if (Test-Path $javaInstaller) {
     Write-Host "Removing Java installer"
     Remove-Item -Force $javaInstaller
 }
+
 [System.Environment]::SetEnvironmentVariable("JAVA_HOME", $null, "Machine")
 Write-Host "JAVA_HOME environment variable removed."
 
 # ===================== UNINSTALL MAVEN =====================
 $mavenInstallDir = "C:\Program Files\Apache\maven-3.9.9"
 $mavenZip = "$env:USERPROFILE\Downloads\apache-maven-3.9.9-bin.zip"
+
 if (Test-Path $mavenInstallDir) {
     Write-Host "Removing Maven directory: $mavenInstallDir"
     Remove-Item -Recurse -Force $mavenInstallDir
 }
+
 if (Test-Path $mavenZip) {
     Write-Host "Removing Maven ZIP"
     Remove-Item -Force $mavenZip
 }
+
 [System.Environment]::SetEnvironmentVariable("MAVEN_HOME", $null, "Machine")
 Write-Host "MAVEN_HOME environment variable removed."
 
@@ -37,11 +64,13 @@ Write-Host "Removed Java and Maven paths from system PATH."
 
 # ===================== UNINSTALL NODE.JS =====================
 $nodeInstaller = "$env:USERPROFILE\Downloads\node-v20.12.2-x64.msi"
+$nodePath = "${env:ProgramFiles}\nodejs"
+
 if (Test-Path $nodeInstaller) {
     Write-Host "Removing Node.js installer"
     Remove-Item -Force $nodeInstaller
 }
-$nodePath = "${env:ProgramFiles}\nodejs"
+
 if (Test-Path $nodePath) {
     Write-Host "Removing Node.js directory: $nodePath"
     Remove-Item -Recurse -Force $nodePath
@@ -54,7 +83,7 @@ function Uninstall-NpmPackage($package) {
         try {
             npm uninstall -g $package
         } catch {
-            Write-Host "Error uninstalling $package: $_"
+            Write-Host "Error uninstalling ${package}: $_"
         }
     }
 }
