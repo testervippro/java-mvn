@@ -1,13 +1,13 @@
 # ===============================
 # Android SDK Setup for Windows
-# Author: Mesaque Francisco (updated & merged version)
+# Author: Mesaque Francisco (updated & renamed)
 # Idempotent, repeatable setup script
 # ===============================
 
-# Configuration
+# Configuration (Updated Path Name)
 $androidZipUrl = "https://dl.google.com/android/repository/commandlinetools-win-9477386_latest.zip"
 $androidZipPath = "$env:USERPROFILE\Downloads\commandlinetools.zip"
-$androidSdkRoot = "C:\Android\sdk"
+$androidSdkRoot = "C:\Android\android_sdk"
 $cmdlineTempPath = "$androidSdkRoot\cmdline-tools\temp"
 $cmdlineToolsPath = "$androidSdkRoot\cmdline-tools\latest"
 $systemImage = "system-images;android-34;google_apis_playstore;x86_64"
@@ -29,13 +29,11 @@ if (-Not (Test-Path $androidZipPath)) {
 if (-Not (Test-Path "$cmdlineToolsPath\bin\sdkmanager.bat")) {
     Write-Host "📦 Extracting tools to SDK path..."
 
-    # Remove old 'latest' if exists
     if (Test-Path $cmdlineToolsPath) {
         Write-Host "🧹 Cleaning up old 'latest' directory..."
         Remove-Item -Recurse -Force $cmdlineToolsPath
     }
 
-    # Clean old temp, extract, and rename
     if (Test-Path $cmdlineTempPath) {
         Remove-Item -Recurse -Force $cmdlineTempPath
     }
