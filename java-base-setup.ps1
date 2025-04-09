@@ -148,4 +148,31 @@ if ($installInspector -match '^[Yy]') {
     Write-Host "Skipping Appium Inspector installation."
 }
 
+# ===================== APPIUM DOCTOR & ANDROID DRIVER =====================
+# Ask if user wants to install Appium Doctor
+$installDoctor = Read-Host "Do you want to install Appium Doctor (diagnostic tool)? (Y/N)"
+if ($installDoctor -match '^[Yy]') {
+    Write-Host "Installing Appium Doctor..."
+    npm install -g appium-doctor
+    Write-Host "`nAPPIUM DOCTOR VERSION:"
+    appium-doctor --version
+    Write-Host "`nRunning Appium Doctor:"
+    appium-doctor
+} else {
+    Write-Host "Skipping Appium Doctor installation."
+}
+
+# Ask if user wants to install Android Driver
+$installAndroidDriver = Read-Host "Do you want to install the Appium Android driver? (Y/N)"
+if ($installAndroidDriver -match '^[Yy]') {
+    Write-Host "Installing Appium Android driver..."
+    appium driver install uiautomator2
+    Write-Host "`nListing installed drivers:"
+    appium driver list
+} else {
+    Write-Host "Skipping Android driver installation."
+}
+
+
+
 
