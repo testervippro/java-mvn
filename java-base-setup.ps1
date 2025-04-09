@@ -39,14 +39,24 @@ $javaHome = "C:\Program Files\Java\jdk-17"
 
 if (-Not (Test-Path $javaInstaller)) {
     Write-Host "Downloading JDK installer..."
-    Invoke-WebRequest -Uri $javaUrl -OutFile $javaInstaller
+    try {
+        Invoke-WebRequest -Uri $javaUrl -OutFile $javaInstaller
+    } catch {
+        Write-Host "Failed to download JDK installer. Error: $_"
+        Exit
+    }
 } else {
     Write-Host "JDK installer already exists."
 }
 
 Write-Host "Installing Java..."
-Start-Process -FilePath $javaInstaller -ArgumentList "/s" -NoNewWindow -Wait
-Write-Host "Java installation completed."
+try {
+    Start-Process -FilePath $javaInstaller -ArgumentList "/s" -NoNewWindow -Wait
+    Write-Host "Java installation completed."
+} catch {
+    Write-Host "Failed to install Java. Error: $_"
+    Exit
+}
 
 [System.Environment]::SetEnvironmentVariable("JAVA_HOME", $javaHome, "Machine")
 Write-Host "JAVA_HOME set to $javaHome"
@@ -59,7 +69,11 @@ $newPath = ($cleanPath + $javaBin) -join ";"
 Write-Host "Java bin added to system PATH"
 
 Write-Host "`nJAVA VERSION:"
-java -version
+try {
+    java -version
+} catch {
+    Write-Host "Java version check failed. Java may not be installed correctly."
+}
 
 # ===================== MAVEN INSTALLATION =====================
 $mavenVersion = "3.9.9"
@@ -71,14 +85,24 @@ $mavenBin = "$mavenExtracted\bin"
 
 if (-Not (Test-Path $mavenZip)) {
     Write-Host "Downloading Maven..."
-    Invoke-WebRequest -Uri $mavenUrl -OutFile $mavenZip
+    try {
+        Invoke-WebRequest -Uri $mavenUrl -OutFile $mavenZip
+    } catch {
+        Write-Host "Failed to download Maven. Error: $_"
+        Exit
+    }
 } else {
     Write-Host "Maven zip already exists."
 }
 
 New-Item -ItemType Directory -Path $mavenInstallDir -Force | Out-Null
-Expand-Archive -Path $mavenZip -DestinationPath $mavenInstallDir -Force
-Write-Host "Maven extracted to $mavenInstallDir"
+try {
+    Expand-Archive -Path $mavenZip -DestinationPath $mavenInstallDir -Force
+    Write-Host "Maven extracted to $mavenInstallDir"
+} catch {
+    Write-Host "Failed to extract Maven. Error: $_"
+    Exit
+}
 
 [System.Environment]::SetEnvironmentVariable("MAVEN_HOME", $mavenExtracted, "Machine")
 Write-Host "MAVEN_HOME set to $mavenExtracted"
@@ -90,11 +114,10 @@ $newPath = ($cleanPath + $mavenBin) -join ";"
 Write-Host "Maven bin added to system PATH"
 
 Write-Host "`nMAVEN VERSION:"
-$mvnOutput = mvn -version 2>&1
-if ($mvnOutput) {
-    Write-Host $mvnOutput
-} else {
-    Write-Host "Maven installation failed. Please check manually."
+try {
+    mvn -version
+} catch {
+    Write-Host "Maven version check failed. Maven may not be installed correctly."
 }
 
 # ===================== OPTIONAL: NODE.JS + APPIUM SETUP =====================
@@ -107,30 +130,59 @@ if ($installNode -match '^[Yy]') {
 
     if (-Not (Test-Path $nodeInstaller)) {
         Write-Host "Downloading Node.js installer..."
-        Invoke-WebRequest -Uri $nodeUrl -OutFile $nodeInstaller
+        try {
+            Invoke-WebRequest -Uri $nodeUrl -OutFile $nodeInstaller
+        } catch {
+            Write-Host "Failed to download Node.js installer. Error: $_"
+        }
     }
 
     Write-Host "Installing Node.js..."
-    Start-Process msiexec.exe -ArgumentList "/i `"$nodeInstaller`" /qn /norestart" -Wait
+    try {
+        Start-Process msiexec.exe -ArgumentList "/i `"$nodeInstaller`" /qn /norestart" -Wait
+        Write-Host "Node.js installed successfully."
+    } catch {
+        Write-Host "Failed to install Node.js. Error: $_"
+    }
 
     Write-Host "`nNODE VERSION:"
-    node -v
+    try {
+        node -v
+    } catch {
+        Write-Host "Node version check failed. Node.js may not be installed correctly."
+    }
+    
     Write-Host "`nNPM VERSION:"
-    npm -v
+    try {
+        npm -v
+    } catch {
+        Write-Host "NPM version check failed. Node.js may not be installed correctly."
+    }
 } else {
     Write-Host "Skipping Node.js installation."
 }
 
 # Ask if user wants to install Appium globally
-$installAppium = Read-Host "Do you want to install Appium globally using npm? (Y/N)"
-if ($installAppium -match '^[Yy]') {
-    Write-Host "Installing Appium globally..."
-    npm install -g appium
+if ($installNode -match '^[Yy]') {
+    $installAppium = Read-Host "Do you want to install Appium globally using npm? (Y/N)"
+    if ($installAppium -match '^[Yy]') {
+        Write-Host "Installing Appium globally..."
+        try {
+            npm install -g appium
+            Write-Host "Appium installed successfully."
+        } catch {
+            Write-Host "Failed to install Appium. Error: $_"
+        }
 
-    Write-Host "`nAPPIUM VERSION:"
-    appium --version
-} else {
-    Write-Host "Skipping Appium installation."
+        Write-Host "`nAPPIUM VERSION:"
+        try {
+            appium --version
+        } catch {
+            Write-Host "Appium version check failed. Appium may not be installed correctly."
+        }
+    } else {
+        Write-Host "Skipping Appium installation."
+    }
 }
 
 # Ask if user wants to install Appium Inspector (Windows GUI)
@@ -140,39 +192,50 @@ if ($installInspector -match '^[Yy]') {
     $inspectorPath = "$env:USERPROFILE\Downloads\Appium-Inspector-windows.exe"
 
     Write-Host "Downloading Appium Inspector..."
-    Invoke-WebRequest -Uri $inspectorUrl -OutFile $inspectorPath
-
-    Write-Host "Launching Appium Inspector installer..."
-    Start-Process -FilePath $inspectorPath -Wait
+    try {
+        Invoke-WebRequest -Uri $inspectorUrl -OutFile $inspectorPath
+        Write-Host "Launching Appium Inspector installer..."
+        Start-Process -FilePath $inspectorPath -Wait
+    } catch {
+        Write-Host "Failed to download or install Appium Inspector. Error: $_"
+    }
 } else {
     Write-Host "Skipping Appium Inspector installation."
 }
 
 # ===================== APPIUM DOCTOR & ANDROID DRIVER =====================
-# Ask if user wants to install Appium Doctor
-$installDoctor = Read-Host "Do you want to install Appium Doctor (diagnostic tool)? (Y/N)"
-if ($installDoctor -match '^[Yy]') {
-    Write-Host "Installing Appium Doctor..."
-    npm install -g appium-doctor
-    Write-Host "`nAPPIUM DOCTOR VERSION:"
-    appium-doctor --version
-    Write-Host "`nRunning Appium Doctor:"
-    appium-doctor
-} else {
-    Write-Host "Skipping Appium Doctor installation."
+if ($installNode -match '^[Yy]' -and $installAppium -match '^[Yy]') {
+    # Ask if user wants to install Appium Doctor
+    $installDoctor = Read-Host "Do you want to install Appium Doctor (diagnostic tool)? (Y/N)"
+    if ($installDoctor -match '^[Yy]') {
+        Write-Host "Installing Appium Doctor..."
+        try {
+            npm install -g appium-doctor
+            Write-Host "`nAPPIUM DOCTOR VERSION:"
+            appium-doctor --version
+            Write-Host "`nRunning Appium Doctor:"
+            appium-doctor
+        } catch {
+            Write-Host "Failed to install or run Appium Doctor. Error: $_"
+        }
+    } else {
+        Write-Host "Skipping Appium Doctor installation."
+    }
+
+    # Ask if user wants to install Android Driver
+    $installAndroidDriver = Read-Host "Do you want to install the Appium Android driver? (Y/N)"
+    if ($installAndroidDriver -match '^[Yy]') {
+        Write-Host "Installing Appium Android driver..."
+        try {
+            appium driver install uiautomator2
+            Write-Host "`nListing installed drivers:"
+            appium driver list
+        } catch {
+            Write-Host "Failed to install Android driver. Error: $_"
+        }
+    } else {
+        Write-Host "Skipping Android driver installation."
+    }
 }
 
-# Ask if user wants to install Android Driver
-$installAndroidDriver = Read-Host "Do you want to install the Appium Android driver? (Y/N)"
-if ($installAndroidDriver -match '^[Yy]') {
-    Write-Host "Installing Appium Android driver..."
-    appium driver install uiautomator2
-    Write-Host "`nListing installed drivers:"
-    appium driver list
-} else {
-    Write-Host "Skipping Android driver installation."
-}
-
-
-
-
+Write-Host "`nSetup completed! Please restart your computer for all changes to take effect."
