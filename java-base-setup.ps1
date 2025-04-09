@@ -176,7 +176,7 @@ if ($installNode -match '^[Yy]') {
 # Ask if user wants to install Appium Inspector (Windows GUI)
 $installInspector = Read-Host "Do you want to install Appium Inspector (GUI for Windows 64-bit)? (Y/N)"
 if ($installInspector -match '^[Yy]') {
-    $inspectorUrl = "https://github.com/appium/appium-inspector/releases/download/v2024.4.1/Appium-Inspector-windows-2024.4.1.exe"
+    $inspectorUrl = "https://github.com/appium/appium-inspector/releases/download/v2025.3.1/Appium-Inspector-2025.3.1-win-x64.exe"
     $inspectorPath = "$env:USERPROFILE\Downloads\Appium-Inspector-windows.exe"
 
     Write-Host "Downloading Appium Inspector..."
