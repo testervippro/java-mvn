@@ -1,12 +1,12 @@
 # ===================== AUTO-ELEVATE TO ADMIN =====================
 if (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    $choice = Read-Host "⚠️ This script requires Administrator rights. Relaunch as Admin? (Y/N)"
+    $choice = Read-Host "This script requires Administrator rights. Relaunch as Admin? (Y/N)"
     if ($choice -match '^[Yy]') {
-        Write-Host "🔁 Relaunching as Administrator..."
+        Write-Host "Relaunching as Administrator..."
         Start-Process powershell "-ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
         Exit
     } else {
-        Write-Host "❌ Exiting. Admin rights are required."
+        Write-Host "Exiting. Admin rights are required."
         Exit
     }
 }
@@ -14,19 +14,19 @@ if (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 # ===================== CHECK & SET EXECUTION POLICY =====================
 $currentPolicy = Get-ExecutionPolicy -Scope Process
 if ($currentPolicy -notin @("RemoteSigned", "Unrestricted")) {
-    Write-Host "⚙️ Current Execution Policy: $currentPolicy"
+    Write-Host "Current Execution Policy: $currentPolicy"
     $policyChoice = Read-Host "Select policy to apply [R]emoteSigned or [U]nrestricted (R/U):"
     switch ($policyChoice.ToUpper()) {
         "R" {
             Set-ExecutionPolicy RemoteSigned -Scope Process -Force
-            Write-Host "✅ Execution policy set to RemoteSigned"
+            Write-Host "Execution policy set to RemoteSigned"
         }
         "U" {
             Set-ExecutionPolicy Unrestricted -Scope Process -Force
-            Write-Host "✅ Execution policy set to Unrestricted"
+            Write-Host "Execution policy set to Unrestricted"
         }
         default {
-            Write-Host "❌ Invalid choice. Exiting."
+            Write-Host "Invalid choice. Exiting."
             Exit
         }
     }
@@ -38,27 +38,27 @@ $javaInstaller = "$env:USERPROFILE\Downloads\jdk-17-installer.exe"
 $javaHome = "C:\Program Files\Java\jdk-17"
 
 if (-Not (Test-Path $javaInstaller)) {
-    Write-Host "📦 Downloading JDK installer..."
+    Write-Host "Downloading JDK installer..."
     Invoke-WebRequest -Uri $javaUrl -OutFile $javaInstaller
 } else {
-    Write-Host "✅ JDK installer already exists."
+    Write-Host "JDK installer already exists."
 }
 
-Write-Host "🚀 Installing Java..."
+Write-Host "Installing Java..."
 Start-Process -FilePath $javaInstaller -ArgumentList "/s" -NoNewWindow -Wait
-Write-Host "✅ Java installation completed."
+Write-Host "Java installation completed."
 
 [System.Environment]::SetEnvironmentVariable("JAVA_HOME", $javaHome, "Machine")
-Write-Host "🔧 JAVA_HOME set to $javaHome"
+Write-Host "JAVA_HOME set to $javaHome"
 
 $javaBin = "$javaHome\bin"
 $systemPath = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
 $cleanPath = ($systemPath -split ";") | Where-Object { $_ -and ($_ -notlike "*jdk-17*") }
 $newPath = ($cleanPath + $javaBin) -join ";"
 [System.Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
-Write-Host "✅ Java bin added to system PATH"
+Write-Host "Java bin added to system PATH"
 
-Write-Host "`n🔍 JAVA VERSION:"
+Write-Host "`nJAVA VERSION:"
 java -version
 
 # ===================== MAVEN INSTALLATION =====================
@@ -70,29 +70,29 @@ $mavenExtracted = "$mavenInstallDir\apache-maven-$mavenVersion"
 $mavenBin = "$mavenExtracted\bin"
 
 if (-Not (Test-Path $mavenZip)) {
-    Write-Host "📦 Downloading Maven..."
+    Write-Host "Downloading Maven..."
     Invoke-WebRequest -Uri $mavenUrl -OutFile $mavenZip
 } else {
-    Write-Host "✅ Maven zip already exists."
+    Write-Host "Maven zip already exists."
 }
 
 New-Item -ItemType Directory -Path $mavenInstallDir -Force | Out-Null
 Expand-Archive -Path $mavenZip -DestinationPath $mavenInstallDir -Force
-Write-Host "✅ Maven extracted to $mavenInstallDir"
+Write-Host "Maven extracted to $mavenInstallDir"
 
 [System.Environment]::SetEnvironmentVariable("MAVEN_HOME", $mavenExtracted, "Machine")
-Write-Host "🔧 MAVEN_HOME set to $mavenExtracted"
+Write-Host "MAVEN_HOME set to $mavenExtracted"
 
 $systemPath = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
 $cleanPath = ($systemPath -split ";") | Where-Object { $_ -and ($_ -notlike "*apache-maven*") }
 $newPath = ($cleanPath + $mavenBin) -join ";"
 [System.Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
-Write-Host "✅ Maven bin added to system PATH"
+Write-Host "Maven bin added to system PATH"
 
-Write-Host "`n🔍 MAVEN VERSION:"
+Write-Host "`nMAVEN VERSION:"
 $mvnOutput = mvn -version 2>&1
 if ($mvnOutput) {
     Write-Host $mvnOutput
 } else {
-    Write-Host "❌ Maven installation failed. Please check manually."
+    Write-Host "Maven installation failed. Please check manually."
 }
