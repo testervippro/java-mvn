@@ -210,20 +210,4 @@ if ($installNode -match '^[Yy]' -and $installAppium -match '^[Yy]') {
         Write-Host "Skipping Appium Doctor installation."
     }
 
-    # Ask if user wants to install Android Driver
-    $installAndroidDriver = Read-Host "Do you want to install the Appium Android driver? (Y/N)"
-    if ($installAndroidDriver -match '^[Yy]') {
-        Write-Host "Installing Appium Android driver..."
-        try {
-            appium driver install uiautomator2
-            Write-Host "`nListing installed drivers:"
-            appium driver list
-        } catch {
-            Write-Host "Failed to install Android driver. Error: $_"
-        }
-    } else {
-        Write-Host "Skipping Android driver installation."
-    }
-}
-
 Write-Host "`nSetup completed! Please restart your computer for all changes to take effect."
