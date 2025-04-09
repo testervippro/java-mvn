@@ -1,15 +1,3 @@
-# ===================== AUTO-ELEVATE TO ADMIN =====================
-if (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    $choice = Read-Host "This script requires Administrator rights. Relaunch as Admin? (Y/N)"
-    if ($choice -match '^[Yy]') {
-        Write-Host "Relaunching as Administrator..."
-        Start-Process powershell "-ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
-        Exit
-    } else {
-        Write-Host "Exiting. Admin rights are required."
-        Exit
-    }
-}
 
 # ===================== CHECK & SET EXECUTION POLICY =====================
 $currentPolicy = Get-ExecutionPolicy -Scope Process
