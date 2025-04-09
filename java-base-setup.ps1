@@ -185,4 +185,4 @@ if ($installInspector -match '^[Yy]') {
     Write-Host "Skipping Appium Inspector installation."
 }
 
-Write-Host "`n✅ Setup completed! Please restart your computer for all environment variable changes to take effect."
+Write-Host "`n✅  Setup completed! Please restart your computer for all environment variable changes to take effect."
