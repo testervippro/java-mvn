@@ -93,19 +93,34 @@ if (-not $existingAvd) {
 # =======================
 Write-Host "Verifying tools in PATH..."
 
-function Check-Tool($name, $command, $args = "--version") {
-    try {
-        Write-Host "Checking $name..."
-        & $command $args
-    } catch {
-        Write-Host " $name not available in PATH or failed to run"
-    }
+Write-Host "Checking adb..."
+try {
+    adb version
+} catch {
+    Write-Host "adb not available in PATH or failed to run"
 }
 
-Check-Tool "adb" "version"
-Check-Tool "emulator" "emulator" "-list-avds"
-Check-Tool "avdmanager" "avdmanager" "-h"
-Check-Tool "aapt2" "aapt2" "version"
+Write-Host "Checking emulator..."
+try {
+    emulator -list-avds
+} catch {
+    Write-Host "emulator not available in PATH or failed to run"
+}
+
+Write-Host "Checking avdmanager..."
+try {
+    avdmanager -h
+} catch {
+    Write-Host "avdmanager not available in PATH or failed to run"
+}
+
+Write-Host "Checking aapt2..."
+try {
+    aapt2 version
+} catch {
+    Write-Host "aapt2 not available in PATH or failed to run"
+}
+
 
 # Final message
 Write-Host "`n🎉 Setup complete!"
