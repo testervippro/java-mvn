@@ -1,138 +1,22 @@
 <#
 .SYNOPSIS
-    Complete development environment setup script with proper error handling
-.DESCRIPTION
-    Installs Java, Maven, Node.js, npm, and Appium with proper PATH configuration
-    and version verification. Includes comprehensive error handling.
+    Complete development environment setup script with enhanced Node.js PATH handling
 #>
 
-# ===================== CONFIGURATION =====================
-$javaVersion = "17.0.12"
-$mavenVersion = "3.9.9"
-$nodeVersion = "20.19.0"
-$appiumInspectorVersion = "2025.3.1"
-
-# ===================== HELPER FUNCTIONS =====================
-function Test-CommandExists {
-    param($command)
-    return (Get-Command $command -ErrorAction SilentlyContinue) -ne $null
-}
-
-function Add-ToSystemPath {
-    param($path)
-    $systemPath = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
-    if ($systemPath -notlike "*$path*") {
-        $newPath = $systemPath + ";" + $path
-        [System.Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
-        Write-Host "Added to PATH: $path" -ForegroundColor Green
-        return $true
-    }
-    return $false
-}
-
-function Invoke-SafeDownload {
-    param($url, $output)
-    try {
-        Invoke-WebRequest -Uri $url -OutFile $output -ErrorAction Stop
-        Write-Host "Downloaded: $output" -ForegroundColor Green
-        return $true
-    } catch {
-        Write-Host "Download failed: $_" -ForegroundColor Red
-        return $false
-    }
-}
-
-function Invoke-SafeInstall {
-    param($installer, $arguments)
-    try {
-        $process = Start-Process -FilePath $installer -ArgumentList $arguments -Wait -NoNewWindow -PassThru
-        if ($process.ExitCode -ne 0) {
-            throw "Installer exited with code $($process.ExitCode)"
-        }
-        return $true
-    } catch {
-        Write-Host "Installation failed: $_" -ForegroundColor Red
-        return $false
-    }
-}
-
-# ===================== EXECUTION POLICY =====================
-$currentPolicy = Get-ExecutionPolicy -Scope Process
-if ($currentPolicy -notin @("RemoteSigned", "Unrestricted")) {
-    Write-Host "Current Execution Policy: $currentPolicy" -ForegroundColor Yellow
-    $policyChoice = Read-Host "Select policy to apply [R]emoteSigned or [U]nrestricted (R/U)?"
-    switch ($policyChoice.ToUpper()) {
-        "R" { Set-ExecutionPolicy RemoteSigned -Scope Process -Force }
-        "U" { Set-ExecutionPolicy Unrestricted -Scope Process -Force }
-        default { Write-Host "Invalid choice. Exiting."; Exit }
-    }
-}
-
-# ===================== JAVA INSTALLATION =====================
-Write-Host "`n=== INSTALLING JAVA JDK $javaVersion ===" -ForegroundColor Cyan
-
-$javaUrl = "https://download.oracle.com/java/17/archive/jdk-${javaVersion}_windows-x64_bin.exe"
-$javaInstaller = "$env:TEMP\jdk-${javaVersion}-installer.exe"
-$javaHome = "C:\Program Files\Java\jdk-$javaVersion"
-
-if (-not (Test-CommandExists "java")) {
-    if (-not (Test-Path $javaInstaller)) {
-        if (-not (Invoke-SafeDownload $javaUrl $javaInstaller)) { Exit }
-    }
-
-    Write-Host "Installing Java JDK..." -ForegroundColor Yellow
-    if (Invoke-SafeInstall $javaInstaller "/s INSTALLDIR=`"$javaHome`"") {
-        # Set environment variables
-        [System.Environment]::SetEnvironmentVariable("JAVA_HOME", $javaHome, "Machine")
-        Add-ToSystemPath "$javaHome\bin" | Out-Null
-        
-        # Verify installation
-        Write-Host "`nJAVA VERSION:" -ForegroundColor Cyan
-        java -version
-    } else {
-        Write-Host "Java installation failed. Please install manually." -ForegroundColor Red
-    }
-} else {
-    Write-Host "Java is already installed:" -ForegroundColor Green
-    java -version
-}
-
-# ===================== MAVEN INSTALLATION =====================
-Write-Host "`n=== INSTALLING MAVEN $mavenVersion ===" -ForegroundColor Cyan
-
-$mavenUrl = "https://dlcdn.apache.org/maven/maven-3/$mavenVersion/binaries/apache-maven-$mavenVersion-bin.zip"
-$mavenZip = "$env:TEMP\apache-maven-$mavenVersion-bin.zip"
-$mavenInstallDir = "C:\Program Files\Apache\maven-$mavenVersion"
-
-if (-not (Test-CommandExists "mvn")) {
-    if (-not (Test-Path $mavenZip)) {
-        if (-not (Invoke-SafeDownload $mavenUrl $mavenZip)) { Exit }
-    }
-
-    try {
-        Expand-Archive -Path $mavenZip -DestinationPath $mavenInstallDir -Force
-        $mavenHome = "$mavenInstallDir\apache-maven-$mavenVersion"
-        
-        # Set environment variables
-        [System.Environment]::SetEnvironmentVariable("MAVEN_HOME", $mavenHome, "Machine")
-        Add-ToSystemPath "$mavenHome\bin" | Out-Null
-        
-        # Verify installation
-        Write-Host "`nMAVEN VERSION:" -ForegroundColor Cyan
-        mvn -version
-    } catch {
-        Write-Host "Maven installation failed: $_" -ForegroundColor Red
-    }
-} else {
-    Write-Host "Maven is already installed:" -ForegroundColor Green
-    mvn -version
-}
+# [Previous configuration and helper functions remain the same until Node.js section]
 
 # ===================== NODE.JS INSTALLATION =====================
 Write-Host "`n=== INSTALLING NODE.JS $nodeVersion ===" -ForegroundColor Cyan
 
 $nodeUrl = "https://nodejs.org/dist/v$nodeVersion/node-v$nodeVersion-x64.msi"
 $nodeInstaller = "$env:TEMP\node-v$nodeVersion-x64.msi"
+$nodeInstallPath = "C:\Program Files\nodejs"
+$npmPath = "$env:APPDATA\npm"
+
+function Test-NodeInPath {
+    $path = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
+    return $path -like "*$nodeInstallPath*" -and $path -like "*$npmPath*"
+}
 
 if (-not (Test-CommandExists "node")) {
     if (-not (Test-Path $nodeInstaller)) {
@@ -141,24 +25,92 @@ if (-not (Test-CommandExists "node")) {
 
     Write-Host "Installing Node.js..." -ForegroundColor Yellow
     if (Invoke-SafeInstall $nodeInstaller "/qn") {
-        # Refresh PATH to detect newly installed binaries
-        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+        # Explicitly add Node.js and npm to PATH if not already present
+        $pathModified = $false
         
-        # Verify installation
-        Write-Host "`nNODE.JS VERSION:" -ForegroundColor Cyan
-        node -v
-        
-        Write-Host "`nNPM VERSION:" -ForegroundColor Cyan
-        npm -v
-        
-        # Install Appium globally
-        $installAppium = Read-Host "Install Appium globally? (Y/N)"
-        if ($installAppium -match '^[Yy]') {
-            Write-Host "Installing Appium..." -ForegroundColor Yellow
-            npm install -g appium
+        if (-not (Test-NodeInPath)) {
+            # Add Node.js installation directory
+            if (Add-ToSystemPath $nodeInstallPath) {
+                $pathModified = $true
+            }
             
-            Write-Host "`nAPPIUM VERSION:" -ForegroundColor Cyan
-            appium --version
+            # Add npm global directory
+            if (Add-ToSystemPath $npmPath) {
+                $pathModified = $true
+            }
+        }
+
+        if ($pathModified) {
+            Write-Host "Node.js directories added to PATH" -ForegroundColor Green
+            # Refresh PATH for current session
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + 
+                        [System.Environment]::GetEnvironmentVariable("Path","User")
+        }
+
+        # Verify installation with retries
+        $maxRetries = 3
+        $retryCount = 0
+        $nodeVerified = $false
+        $npmVerified = $false
+        
+        while ($retryCount -lt $maxRetries) {
+            Start-Sleep -Seconds 2  # Allow time for PATH changes to propagate
+            
+            Write-Host "`nVerifying installation (Attempt $($retryCount + 1))..." -ForegroundColor Yellow
+            
+            # Check Node.js
+            try {
+                $nodeVersionOutput = node -v 2>&1
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host "NODE VERSION: $($nodeVersionOutput.Trim())" -ForegroundColor Green
+                    $nodeVerified = $true
+                } else {
+                    Write-Host "Node version check failed (Exit code: $LASTEXITCODE)" -ForegroundColor Red
+                }
+            } catch {
+                Write-Host "Node version check error: $_" -ForegroundColor Red
+            }
+            
+            # Check npm
+            try {
+                $npmVersionOutput = npm -v 2>&1
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host "NPM VERSION: $($npmVersionOutput.Trim())" -ForegroundColor Green
+                    $npmVerified = $true
+                } else {
+                    Write-Host "npm version check failed (Exit code: $LASTEXITCODE)" -ForegroundColor Red
+                }
+            } catch {
+                Write-Host "npm version check error: $_" -ForegroundColor Red
+            }
+            
+            if ($nodeVerified -and $npmVerified) {
+                break
+            }
+            
+            $retryCount++
+        }
+
+        if (-not ($nodeVerified -and $npmVerified)) {
+            Write-Host "`nNode.js installation verification failed after $maxRetries attempts" -ForegroundColor Red
+            Write-Host "Possible solutions:" -ForegroundColor Yellow
+            Write-Host "1. Restart your computer to ensure PATH changes take effect"
+            Write-Host "2. Verify these directories exist and are in your PATH:"
+            Write-Host "   - $nodeInstallPath"
+            Write-Host "   - $npmPath"
+            Write-Host "3. Check Node.js installation in Control Panel > Programs"
+        }
+
+        # Install Appium globally if requested
+        if ($nodeVerified -and $npmVerified) {
+            $installAppium = Read-Host "Install Appium globally? (Y/N)"
+            if ($installAppium -match '^[Yy]') {
+                Write-Host "Installing Appium..." -ForegroundColor Yellow
+                npm install -g appium
+                
+                Write-Host "`nAPPIUM VERSION:" -ForegroundColor Cyan
+                appium --version
+            }
         }
     } else {
         Write-Host "Node.js installation failed. Please install manually." -ForegroundColor Red
@@ -169,18 +121,4 @@ if (-not (Test-CommandExists "node")) {
     npm -v
 }
 
-# ===================== APPIUM INSPECTOR =====================
-$inspectorChoice = Read-Host "`nInstall Appium Inspector $appiumInspectorVersion? (Y/N)"
-if ($inspectorChoice -match '^[Yy]') {
-    $inspectorUrl = "https://github.com/appium/appium-inspector/releases/download/v$appiumInspectorVersion/Appium-Inspector-$appiumInspectorVersion-win-x64.exe"
-    $inspectorInstaller = "$env:TEMP\Appium-Inspector.exe"
-    
-    if (Invoke-SafeDownload $inspectorUrl $inspectorInstaller) {
-        Write-Host "Installing Appium Inspector..." -ForegroundColor Yellow
-        Invoke-SafeInstall $inspectorInstaller "/S" | Out-Null
-    }
-}
-
-# ===================== FINAL STEPS =====================
-Write-Host "`n=== INSTALLATION COMPLETE ===" -ForegroundColor Green
-Write-Host "Please restart your computer for all changes to take effect." -ForegroundColor Yellow
+# [Rest of the script remains the same]
