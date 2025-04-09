@@ -1,7 +1,4 @@
-# ===============================
-# Minimal Android SDK Setup (Windows) + PATH Check
-# Author: Mesaque (Extended by ChatGPT)
-# ===============================
+
 
 # Config
 $androidZipUrl = "https://dl.google.com/android/repository/commandlinetools-win-9477386_latest.zip"
