@@ -96,3 +96,56 @@ if ($mvnOutput) {
 } else {
     Write-Host "Maven installation failed. Please check manually."
 }
+
+# ===================== OPTIONAL: NODE.JS + APPIUM SETUP =====================
+
+# Ask if user wants to install Node.js
+$installNode = Read-Host "Do you want to install Node.js (required for Appium)? (Y/N)"
+if ($installNode -match '^[Yy]') {
+    $nodeUrl = "https://nodejs.org/dist/v20.12.2/node-v20.12.2-x64.msi"
+    $nodeInstaller = "$env:USERPROFILE\Downloads\node-v20.12.2-x64.msi"
+
+    if (-Not (Test-Path $nodeInstaller)) {
+        Write-Host "Downloading Node.js installer..."
+        Invoke-WebRequest -Uri $nodeUrl -OutFile $nodeInstaller
+    }
+
+    Write-Host "Installing Node.js..."
+    Start-Process msiexec.exe -ArgumentList "/i `"$nodeInstaller`" /qn /norestart" -Wait
+
+    Write-Host "`nNODE VERSION:"
+    node -v
+    Write-Host "`nNPM VERSION:"
+    npm -v
+} else {
+    Write-Host "Skipping Node.js installation."
+}
+
+# Ask if user wants to install Appium globally
+$installAppium = Read-Host "Do you want to install Appium globally using npm? (Y/N)"
+if ($installAppium -match '^[Yy]') {
+    Write-Host "Installing Appium globally..."
+    npm install -g appium
+
+    Write-Host "`nAPPIUM VERSION:"
+    appium --version
+} else {
+    Write-Host "Skipping Appium installation."
+}
+
+# Ask if user wants to install Appium Inspector (Windows GUI)
+$installInspector = Read-Host "Do you want to install Appium Inspector (GUI for Windows 64-bit)? (Y/N)"
+if ($installInspector -match '^[Yy]') {
+    $inspectorUrl = "https://github.com/appium/appium-inspector/releases/download/v2024.4.1/Appium-Inspector-windows-2024.4.1.exe"
+    $inspectorPath = "$env:USERPROFILE\Downloads\Appium-Inspector-windows.exe"
+
+    Write-Host "Downloading Appium Inspector..."
+    Invoke-WebRequest -Uri $inspectorUrl -OutFile $inspectorPath
+
+    Write-Host "Launching Appium Inspector installer..."
+    Start-Process -FilePath $inspectorPath -Wait
+} else {
+    Write-Host "Skipping Appium Inspector installation."
+}
+
+
