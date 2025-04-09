@@ -13,7 +13,7 @@ $buildToolsVersion = "34.0.0"
 $avdName = "pixel_6a_avd"
 $systemImage = "system-images;android-30;google_apis;x86_64"
 
-# Ensure SDK root
+# Ensure SDK root exists
 if (-Not (Test-Path $androidSdkRoot)) {
     New-Item -ItemType Directory -Path $androidSdkRoot -Force | Out-Null
 }
@@ -36,7 +36,7 @@ if (-Not (Test-Path "$cmdlineToolsPath\bin\sdkmanager.bat")) {
 $env:ANDROID_HOME = $androidSdkRoot
 $env:ANDROID_SDK_ROOT = $androidSdkRoot
 
-# Persist environment vars
+# Persist environment vars (machine level)
 [System.Environment]::SetEnvironmentVariable("ANDROID_HOME", $androidSdkRoot, "Machine")
 [System.Environment]::SetEnvironmentVariable("ANDROID_SDK_ROOT", $androidSdkRoot, "Machine")
 
@@ -62,7 +62,8 @@ $packages = @(
     $systemImage
 )
 
-function Install-PackageIfMissing($pkg) {
+function Install-PackageIfMissing {
+    param([string]$pkg)
     $installed = & $sdkmanager --list_installed 2>&1 | Select-String $pkg
     if (-not $installed) {
         Write-Host "📦 Installing: $pkg"
@@ -71,6 +72,7 @@ function Install-PackageIfMissing($pkg) {
         Write-Host "✔ Already installed: $pkg"
     }
 }
+
 foreach ($pkg in $packages) {
     Install-PackageIfMissing $pkg
 }
@@ -93,7 +95,12 @@ if (-not $existingAvd) {
 # =======================
 Write-Host "`n🔍 Verifying tools in PATH..."
 
-function Check-Tool($name, $command, $args = "--version") {
+function Check-Tool {
+    param (
+        [string]$name,
+        [string]$command,
+        [string]$args = "--version"
+    )
     Write-Host "🔧 Checking $name..."
     try {
         & $command $args
