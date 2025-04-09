@@ -39,17 +39,6 @@ $env:ANDROID_SDK_ROOT = $androidSdkRoot
 [System.Environment]::SetEnvironmentVariable("ANDROID_HOME", $androidSdkRoot, "Machine")
 [System.Environment]::SetEnvironmentVariable("ANDROID_SDK_ROOT", $androidSdkRoot, "Machine")
 
-# Add important paths
-$pathsToAdd = @(
-    "$cmdlineToolsPath\bin",                           # avdmanager, sdkmanager
-    "$androidSdkRoot\platform-tools",                 # adb
-    "$androidSdkRoot\emulator",                       # emulator
-    "$androidSdkRoot\build-tools\$buildToolsVersion"  # aapt2
-)
-
-$currentPath = [System.Environment]::GetEnvironmentVariable("Path", "Machine") -split ";" | Where-Object { $_ -ne "" }
-$newPath = ($currentPath + $pathsToAdd | Select-Object -Unique) -join ";"
-[System.Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
 
 # Install packages
 $sdkmanager = "$cmdlineToolsPath\bin\sdkmanager.bat"
@@ -61,6 +50,18 @@ $packages = @(
     $systemImage
 )
 
+
+# Add important paths
+$pathsToAdd = @(
+    "$cmdlineToolsPath\bin",                           # avdmanager, sdkmanager
+    "$androidSdkRoot\platform-tools",                 # adb
+    "$androidSdkRoot\emulator",                       # emulator
+    "$androidSdkRoot\build-tools\$buildToolsVersion"  # aapt2
+)
+
+$currentPath = [System.Environment]::GetEnvironmentVariable("Path", "Machine") -split ";" | Where-Object { $_ -ne "" }
+$newPath = ($currentPath + $pathsToAdd | Select-Object -Unique) -join ";"
+[System.Environment]::SetEnvironmentVariable("Path", $newPath, "Machine") 
 function Install-PackageIfMissing($pkg) {
     $installed = & $sdkmanager --list_installed 2>&1 | Select-String $pkg
     if (-not $installed) {
