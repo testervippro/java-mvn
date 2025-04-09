@@ -10,7 +10,7 @@ $androidSdkRoot = "C:\Android\android_sdk"
 $cmdlineTempPath = "$androidSdkRoot\cmdline-tools\temp"
 $cmdlineToolsPath = "$androidSdkRoot\cmdline-tools\latest"
 $buildToolsVersion = "34.0.0"
-$avdName = "pixel6a"
+$avdName = "demo"
 $systemImage = "system-images;android-30;google_apis;x86_64"
 
 # Ensure SDK root
@@ -89,38 +89,23 @@ if (-not $existingAvd) {
 }
 
 # =======================
-#  Check PATH and Tools
+# ✅ Check PATH and Tools
 # =======================
-Write-Host "Verifying tools in PATH..."
+Write-Host "`n🔍 Verifying tools in PATH..."
 
-Write-Host "Checking adb..."
-try {
-    adb version
-} catch {
-    Write-Host "adb not available in PATH or failed to run"
+function Check-Tool($name, $command, $args = "--version") {
+    try {
+        Write-Host "🔧 Checking $name..."
+        & $command $args
+    } catch {
+        Write-Host "❌ $name not available in PATH or failed to run"
+    }
 }
 
-Write-Host "Checking emulator..."
-try {
-    emulator -list-avds
-} catch {
-    Write-Host "emulator not available in PATH or failed to run"
-}
-
-Write-Host "Checking avdmanager..."
-try {
-    avdmanager -h
-} catch {
-    Write-Host "avdmanager not available in PATH or failed to run"
-}
-
-Write-Host "Checking aapt2..."
-try {
-    aapt2 version
-} catch {
-    Write-Host "aapt2 not available in PATH or failed to run"
-}
-
+Check-Tool "adb" "adb"
+Check-Tool "emulator" "emulator" "-version"
+Check-Tool "avdmanager" "avdmanager" "--version"
+Check-Tool "aapt2" "aapt2" "-v"
 
 # Final message
 Write-Host "`n🎉 Setup complete!"
