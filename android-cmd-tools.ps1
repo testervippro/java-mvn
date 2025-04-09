@@ -1,5 +1,6 @@
 # ===============================
 # Minimal Android SDK Setup (Windows) + PATH Check
+# Author: Mesaque (Extended by ChatGPT)
 # ===============================
 
 # Config
@@ -39,6 +40,17 @@ $env:ANDROID_SDK_ROOT = $androidSdkRoot
 [System.Environment]::SetEnvironmentVariable("ANDROID_HOME", $androidSdkRoot, "Machine")
 [System.Environment]::SetEnvironmentVariable("ANDROID_SDK_ROOT", $androidSdkRoot, "Machine")
 
+# Add important paths
+$pathsToAdd = @(
+    "$cmdlineToolsPath\bin",                           # avdmanager, sdkmanager
+    "$androidSdkRoot\platform-tools",                 # adb
+    "$androidSdkRoot\emulator",                       # emulator
+    "$androidSdkRoot\build-tools\$buildToolsVersion"  # aapt2
+)
+
+$currentPath = [System.Environment]::GetEnvironmentVariable("Path", "Machine") -split ";" | Where-Object { $_ -ne "" }
+$newPath = ($currentPath + $pathsToAdd | Select-Object -Unique) -join ";"
+[System.Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
 
 # Install packages
 $sdkmanager = "$cmdlineToolsPath\bin\sdkmanager.bat"
@@ -50,40 +62,27 @@ $packages = @(
     $systemImage
 )
 
-
-# Add important paths
-$pathsToAdd = @(
-    "$cmdlineToolsPath\bin",                           # avdmanager, sdkmanager
-    "$androidSdkRoot\platform-tools",                 # adb
-    "$androidSdkRoot\emulator",                       # emulator
-    "$androidSdkRoot\build-tools\$buildToolsVersion"  # aapt2
-)
-
-$currentPath = [System.Environment]::GetEnvironmentVariable("Path", "Machine") -split ";" | Where-Object { $_ -ne "" }
-$newPath = ($currentPath + $pathsToAdd | Select-Object -Unique) -join ";"
-[System.Environment]::SetEnvironmentVariable("Path", $newPath, "Machine") 
 function Install-PackageIfMissing($pkg) {
     $installed = & $sdkmanager --list_installed 2>&1 | Select-String $pkg
     if (-not $installed) {
-        Write-Host "Installing: $pkg"
+        Write-Host "📦 Installing: $pkg"
         & $sdkmanager $pkg --sdk_root="$androidSdkRoot"
     } else {
-        Write-Host "Already installed: $pkg"
+        Write-Host "✔ Already installed: $pkg"
     }
 }
 foreach ($pkg in $packages) {
     Install-PackageIfMissing $pkg
 }
 
-# Accept licenses automatically
-Write-Host "📝 Accepting all SDK licenses..."
-"y" | & $sdkmanager --licenses --sdk_root="$androidSdkRoot"
+# Accept licenses
+& $sdkmanager --licenses --sdk_root="$androidSdkRoot" | ForEach-Object { $_ }
 
 # Create AVD
 $avdmanager = "$cmdlineToolsPath\bin\avdmanager.bat"
 $existingAvd = & $avdmanager list avd | Select-String $avdName
 if (-not $existingAvd) {
-    Write-Host " Creating AVD: $avdName (Pixel 6a)"
+    Write-Host "📱 Creating AVD: $avdName (Pixel 6a)"
     & $avdmanager create avd -n $avdName --device "pixel_6a" -k $systemImage --force
 } else {
     Write-Host "✔ AVD already exists: $avdName"
