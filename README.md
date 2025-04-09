@@ -1,8 +1,25 @@
 
 ```markdown
-# 📱 Android Command Line Tools Cheat Sheet
+# Java and Maven, Node.js, Appium, Appium Inspector (Run as Admin)
 
-## 🧰 ADB (Android Debug Bridge)
+## Script
+
+```powershell
+# run-java-setup.ps1
+Set-ExecutionPolicy RemoteSigned -Scope Process -Force
+Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/testervippro/java-mvn/main/java-base-setup.ps1" -UseBasicParsing).Content
+```
+
+# Install Command Line Tools Only (Without Android Studio) (Run as Admin)
+
+```powershell
+Set-ExecutionPolicy RemoteSigned -Scope Process -Force
+Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/testervippro/java-mvn/main/android-cmd-tools.ps1" -UseBasicParsing).Content
+```
+
+---
+
+# ADB (Android Debug Bridge)
 | Command | Description |
 |--------|-------------|
 | `adb devices` | List connected Android devices or emulators |
@@ -19,7 +36,7 @@
 
 ---
 
-## 🧪 Emulator
+# Emulator
 | Command | Description |
 |--------|-------------|
 | `emulator -list-avds` | List all available AVDs |
@@ -31,7 +48,7 @@
 
 ---
 
-## 🧩 AVD Manager (`avdmanager`)
+# AVD Manager (`avdmanager`)
 | Command | Description |
 |--------|-------------|
 | `avdmanager list avd` | List all AVDs |
@@ -47,7 +64,7 @@ avdmanager create avd -n pixel6a -k "system-images;android-30;google_apis;x86_64
 
 ---
 
-## 🛠️ AAPT2 (Android Asset Packaging Tool v2)
+# AAPT2 (Android Asset Packaging Tool v2)
 | Command | Description |
 |--------|-------------|
 | `aapt2 compile file.xml -o output/` | Compile a resource file |
@@ -58,6 +75,9 @@ avdmanager create avd -n pixel6a -k "system-images;android-30;google_apis;x86_64
 
 ---
 
-## ✅ Notes
+# Notes
 - Use `sdkmanager --list` to view available packages.
 - Make sure environment variables like `ANDROID_HOME` and `PATH` are properly set.
+```
+
+Let me know if you'd like me to save this into a `.md` file for upload to GitHub.
