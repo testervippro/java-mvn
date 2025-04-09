@@ -94,8 +94,8 @@ if (-not $existingAvd) {
 Write-Host "`n🔍 Verifying tools in PATH..."
 
 function Check-Tool($name, $command, $args = "--version") {
+    Write-Host "🔧 Checking $name..."
     try {
-        Write-Host "🔧 Checking $name..."
         & $command $args
     } catch {
         Write-Host "❌ $name not available in PATH or failed to run"
