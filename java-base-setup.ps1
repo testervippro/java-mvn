@@ -112,8 +112,9 @@ try {
 # Ask if user wants to install Node.js
 $installNode = Read-Host "Do you want to install Node.js (required for Appium)? (Y/N)"
 if ($installNode -match '^[Yy]') {
-    $nodeUrl = "https://nodejs.org/dist/v20.12.2/node-v20.12.2-x64.msi"
-    $nodeInstaller = "$env:USERPROFILE\Downloads\node-v20.12.2-x64.msi"
+    $nodeVersion = "v20.19.0"
+    $nodeUrl = "https://nodejs.org/dist/$nodeVersion/node-$nodeVersion-x64.msi"
+    $nodeInstaller = "$env:USERPROFILE\Downloads\node-$nodeVersion-x64.msi"
 
     if (-Not (Test-Path $nodeInstaller)) {
         Write-Host "Downloading Node.js installer..."
@@ -121,6 +122,7 @@ if ($installNode -match '^[Yy]') {
             Invoke-WebRequest -Uri $nodeUrl -OutFile $nodeInstaller
         } catch {
             Write-Host "Failed to download Node.js installer. Error: $_"
+            exit
         }
     }
 
@@ -130,42 +132,41 @@ if ($installNode -match '^[Yy]') {
         Write-Host "Node.js installed successfully."
     } catch {
         Write-Host "Failed to install Node.js. Error: $_"
+        exit
     }
 
     Write-Host "`nNODE VERSION:"
-    try {
+    if (Get-Command node -ErrorAction SilentlyContinue) {
         node -v
-    } catch {
-        Write-Host "Node version check failed. Node.js may not be installed correctly."
+    } else {
+        Write-Host "Node.js not found in PATH. May not be installed correctly."
     }
 
     Write-Host "`nNPM VERSION:"
-    try {
+    if (Get-Command npm -ErrorAction SilentlyContinue) {
         npm -v
-    } catch {
-        Write-Host "NPM version check failed. Node.js may not be installed correctly."
-    }
-
-    # Ask if user wants to install Appium globally
-    $installAppium = Read-Host "Do you want to install Appium globally using npm? (Y/N)"
-    if ($installAppium -match '^[Yy]') {
-        Write-Host "Installing Appium globally..."
-        try {
-            npm install -g appium
-            Write-Host "Appium installed successfully."
-        } catch {
-            Write-Host "Failed to install Appium. Error: $_"
-        }
-
-        Write-Host "`nAPPIUM VERSION:"
-        try {
-            appium --version
-        } catch {
-            Write-Host "Appium version check failed. Appium may not be installed correctly."
-        }
     } else {
-        Write-Host "Skipping Appium installation."
+        Write-Host "npm not found in PATH. May not be installed correctly."
     }
+
+    # Automatically install Appium globally
+    Write-Host "Installing Appium globally..."
+    try {
+        npm install -g appium
+        Write-Host "Appium installed successfully."
+    } catch {
+        Write-Host "Failed to install Appium. Error: $_"
+    }
+
+    Write-Host "`nAPPIUM VERSION:"
+    if (Get-Command appium -ErrorAction SilentlyContinue) {
+        appium --version
+    } else {
+        Write-Host "Appium not found. Please check your installation."
+    }
+} else {
+    Write-Host "Skipping Node.js and Appium setup."
+}
 
     # Ask if user wants to install Appium Inspector
     $installInspector = Read-Host "Do you want to install Appium Inspector (GUI for Windows 64-bit)? (Y/N)"
@@ -184,25 +185,5 @@ if ($installNode -match '^[Yy]') {
     } else {
         Write-Host "Skipping Appium Inspector installation."
     }
-
-    # Ask if user wants to install Appium Doctor
-    $installDoctor = Read-Host "Do you want to install Appium Doctor (diagnostic tool)? (Y/N)"
-    if ($installDoctor -match '^[Yy]') {
-        Write-Host "Installing Appium Doctor..."
-        try {
-            npm install -g appium-doctor
-            Write-Host "`nAPPIUM DOCTOR VERSION:"
-            appium-doctor --version
-            Write-Host "`nRunning Appium Doctor:"
-            appium-doctor
-        } catch {
-            Write-Host "Failed to install or run Appium Doctor. Error: $_"
-        }
-    } else {
-        Write-Host "Skipping Appium Doctor installation."
-    }
-} else {
-    Write-Host "Skipping Node.js and Appium setup."
-}
 
 Write-Host "`nSetup completed! Please restart your computer for all changes to take effect."
