@@ -10,7 +10,7 @@ $androidSdkRoot = "C:\Android\android_sdk"
 $cmdlineTempPath = "$androidSdkRoot\cmdline-tools\temp"
 $cmdlineToolsPath = "$androidSdkRoot\cmdline-tools\latest"
 $buildToolsVersion = "34.0.0"
-$avdName = "pixel_6a_avd"
+$avdName = "demo"
 $systemImage = "system-images;android-30;google_apis;x86_64"
 
 # Ensure SDK root exists
@@ -100,7 +100,7 @@ if (-not $existingAvd) {
 }
 
 # =======================
-# ✅ Check PATH and Tools
+#  Check PATH and Tools
 # =======================
 Write-Host "`n🔍 Verifying tools in PATH..."
 
@@ -110,11 +110,11 @@ function Check-Tool {
         [string]$command,
         [string]$args = "--version"
     )
-    Write-Host "🔧 Checking $name..."
+    Write-Host " Checking $name..."
     try {
         & $command $args
     } catch {
-        Write-Host "❌ $name not available in PATH or failed to run"
+        Write-Host " $name not available in PATH or failed to run"
     }
 }
 
@@ -124,6 +124,6 @@ Check-Tool "avdmanager" "avdmanager" "--version"
 Check-Tool "aapt2" "aapt2" "-v"
 
 # Final message
-Write-Host "`n🎉 Setup complete!"
+Write-Host "Setup complete"
 Write-Host "➡ Restart PowerShell or your PC to apply PATH changes"
 Write-Host "➡ Start the emulator using: emulator @$avdName"
