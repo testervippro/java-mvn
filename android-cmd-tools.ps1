@@ -87,8 +87,9 @@ foreach ($pkg in $packages) {
     Install-PackageIfMissing $pkg
 }
 
-# Accept licenses
-& $sdkmanager --licenses --sdk_root="$androidSdkRoot" | ForEach-Object { $_ }
+# Auto-accept all licenses
+Write-Host " Accepting licenses..."
+echo "y" | & $sdkmanager --licenses --sdk_root="$androidSdkRoot"
 
 # Create AVD
 $avdmanager = "$cmdlineToolsPath\bin\avdmanager.bat"
@@ -97,7 +98,7 @@ if (-not $existingAvd) {
     Write-Host "📱 Creating AVD: $avdName (Pixel 6a)"
     & $avdmanager create avd -n $avdName --device "pixel_6a" -k $systemImage --force
 } else {
-    Write-Host "✔ AVD already exists: $avdName"
+    Write-Host " AVD already exists: $avdName"
 }
 
 # =======================
@@ -105,26 +106,7 @@ if (-not $existingAvd) {
 # =======================
 Write-Host "`n🔍 Verifying tools in PATH..."
 
-function Check-Tool {
-    param (
-        [string]$name,
-        [string]$command,
-        [string]$args = "--version"
-    )
-    Write-Host " Checking $name..."
-    try {
-        & $command $args
-    } catch {
-        Write-Host " $name not available in PATH or failed to run"
-    }
-}
+adb version
+avdmanager -h
+aapt2 version
 
-Check-Tool "adb" "adb"
-Check-Tool "emulator" "emulator" "-version"
-Check-Tool "avdmanager" "avdmanager" "--version"
-Check-Tool "aapt2" "aapt2" "-v"
-
-# Final message
-Write-Host "Setup complete"
-Write-Host "➡ Restart PowerShell or your PC to apply PATH changes"
-Write-Host "➡ Start the emulator using: emulator @$avdName"
