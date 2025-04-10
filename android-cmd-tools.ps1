@@ -36,9 +36,18 @@ if (-Not (Test-Path "$cmdlineToolsPath\bin\sdkmanager.bat")) {
 $env:ANDROID_HOME = $androidSdkRoot
 $env:ANDROID_SDK_ROOT = $androidSdkRoot
 
+$androidEmulatorHome = "$androidSdkRoot\.android"
+$androidAvdHome = "$androidEmulatorHome\avd"
+
+$env:ANDROID_EMULATOR_HOME = $androidEmulatorHome
+$env:ANDROID_AVD_HOME = $androidAvdHome
+
 # Persist environment vars (machine level)
 [System.Environment]::SetEnvironmentVariable("ANDROID_HOME", $androidSdkRoot, "Machine")
 [System.Environment]::SetEnvironmentVariable("ANDROID_SDK_ROOT", $androidSdkRoot, "Machine")
+[System.Environment]::SetEnvironmentVariable("ANDROID_EMULATOR_HOME", $androidEmulatorHome, "Machine")
+[System.Environment]::SetEnvironmentVariable("ANDROID_AVD_HOME", $androidAvdHome, "Machine")
+
 
 # Add important paths
 $pathsToAdd = @(
