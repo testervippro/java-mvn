@@ -1,7 +1,3 @@
-# ===============================
-# Minimal Android SDK Setup (Windows) + PATH Check
-# Author: Mesaque (Extended by ChatGPT)
-# ===============================
 
 # Config
 $androidZipUrl = "https://dl.google.com/android/repository/commandlinetools-win-9477386_latest.zip"
@@ -87,11 +83,9 @@ foreach ($pkg in $packages) {
     Install-PackageIfMissing $pkg
 }
 
-# Auto-accept all licenses
-Write-Host " Accepting licenses..."
-echo "y" | & $sdkmanager --licenses --sdk_root="$androidSdkRoot"
 
 # Create AVD
+Write-Host "Must Yes to install"
 $avdmanager = "$cmdlineToolsPath\bin\avdmanager.bat"
 $existingAvd = & $avdmanager list avd | Select-String $avdName
 if (-not $existingAvd) {
@@ -101,12 +95,10 @@ if (-not $existingAvd) {
     Write-Host " AVD already exists: $avdName"
 }
 
-# =======================
-#  Check PATH and Tools
-# =======================
-Write-Host "`n🔍 Verifying tools in PATH..."
+Write-Host "Verifying tools in PATH..."
 
 adb version
 avdmanager -h
 aapt2 version
+emulator -list
 
