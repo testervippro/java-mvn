@@ -107,82 +107,75 @@ try {
     Write-Host "Maven version check failed. Maven may not be installed correctly."
 }
 
-# ===================== NODE.JS, APPIUM & INSPECTOR =====================
-$installNode = Read-Host "Do you want to install Node.js (required for Appium)? (Y/N)"
-if ($installNode -match '^[Yy]') {
-    $nodeVersion = "v20.19.0"
-    $nodeUrl = "https://nodejs.org/dist/$nodeVersion/node-$nodeVersion-x64.msi"
-    $nodeInstaller = "$env:USERPROFILE\Downloads\node-$nodeVersion-x64.msi"
-    $nodePath = "C:\Program Files\nodejs"
+# ===================== NODE.JS, APPIUM & INSPECTOR (AUTO INSTALL) =====================
 
-    if (-Not (Test-Path $nodeInstaller)) {
-        Write-Host "Downloading Node.js installer..."
-        try {
-            Invoke-WebRequest -Uri $nodeUrl -OutFile $nodeInstaller
-        } catch {
-            Write-Host "Failed to download Node.js installer. Error: $_"
-            Exit
-        }
-    }
+# Install Node.js
+$nodeVersion = "v20.19.0"
+$nodeUrl = "https://nodejs.org/dist/$nodeVersion/node-$nodeVersion-x64.msi"
+$nodeInstaller = "$env:USERPROFILE\Downloads\node-$nodeVersion-x64.msi"
+$nodePath = "C:\Program Files\nodejs"
 
-    Write-Host "Installing Node.js..."
+if (-Not (Test-Path $nodeInstaller)) {
+    Write-Host "Downloading Node.js installer..."
     try {
-        Start-Process msiexec.exe -ArgumentList "/i `"$nodeInstaller`" /qn /norestart" -Wait
-        Write-Host "Node.js installed successfully."
+        Invoke-WebRequest -Uri $nodeUrl -OutFile $nodeInstaller
     } catch {
-        Write-Host "Failed to install Node.js. Error: $_"
+        Write-Host "Failed to download Node.js installer. Error: $_"
         Exit
     }
-
-    # Add Node.js to PATH
-    if (Test-Path $nodePath) {
-        $systemPath = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
-        $cleanPath = ($systemPath -split ";") | Where-Object { $_ -and ($_ -notlike "*nodejs*") }
-        $newPath = ($cleanPath + $nodePath) -join ";"
-        [System.Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
-        Write-Host "Node.js path added to system PATH"
-    }
-
-    # Version checks
-    Write-Host "`nNODE VERSION:"
-    node -v
-    Write-Host "`nNPM VERSION:"
-    npm -v
-
-    # Install Appium & Appium Doctor
-    Write-Host "Installing Appium and Appium Doctor globally..."
-    try {
-        npm install -g appium
-        npm install -g appium-doctor
-        Write-Host "Appium and Appium Doctor installed successfully."
-    } catch {
-        Write-Host "Failed to install Appium or Appium Doctor. Error: $_"
-    }
-
-    Write-Host "`nAPPIUM VERSION:"
-    appium --version
-    Write-Host "`nAPPIUM DOCTOR VERSION:"
-    appium-doctor --version
-} else {
-    Write-Host "Skipping Node.js and Appium setup."
 }
 
-# ===================== OPTIONAL: APPIUM INSPECTOR =====================
-$installInspector = Read-Host "Do you want to install Appium Inspector (GUI for Windows 64-bit)? (Y/N)"
-if ($installInspector -match '^[Yy]') {
-    $inspectorUrl = "https://github.com/appium/appium-inspector/releases/download/v2025.3.1/Appium-Inspector-2025.3.1-win-x64.exe"
-    $inspectorPath = "$env:USERPROFILE\Downloads\Appium-Inspector-windows.exe"
-
-    Write-Host "Downloading Appium Inspector..."
-    try {
-        Invoke-WebRequest -Uri $inspectorUrl -OutFile $inspectorPath
-        Write-Host "Launching Appium Inspector installer..."
-        Start-Process -FilePath $inspectorPath -Wait
-    } catch {
-        Write-Host "Failed to download or install Appium Inspector. Error: $_"
-    }
-} else {
-    Write-Host "Skipping Appium Inspector installation."
+Write-Host "Installing Node.js..."
+try {
+    Start-Process msiexec.exe -ArgumentList "/i `"$nodeInstaller`" /qn /norestart" -Wait
+    Write-Host "Node.js installed successfully."
+} catch {
+    Write-Host "Failed to install Node.js. Error: $_"
+    Exit
 }
 
-Write-Host "`n✅  Setup completed! Please restart your computer for all environment variable changes to take effect."
+# Add Node.js to PATH
+if (Test-Path $nodePath) {
+    $systemPath = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
+    $cleanPath = ($systemPath -split ";") | Where-Object { $_ -and ($_ -notlike "*nodejs*") }
+    $newPath = ($cleanPath + $nodePath) -join ";"
+    [System.Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
+    Write-Host "🔧 Node.js path added to system PATH"
+}
+
+# Version checks
+Write-Host " NODE VERSION:"
+node -v
+Write-Host " NPM VERSION:"
+npm -v
+
+# Install Appium & Appium Doctor globally
+Write-Host "Installing Appium and Appium Doctor globally..."
+try {
+    npm install -g appium
+    npm install -g appium-doctor
+    Write-Host " Appium and Appium Doctor installed successfully."
+} catch {
+    Write-Host "Failed to install Appium or Appium Doctor. Error: $_"
+}
+
+Write-Host "APPIUM VERSION:"
+appium --version
+Write-Host "APPIUM DOCTOR VERSION:"
+appium-doctor --version
+
+# Install Appium Inspector (GUI)
+$inspectorUrl = "https://github.com/appium/appium-inspector/releases/download/v2025.3.1/Appium-Inspector-2025.3.1-win-x64.exe"
+$inspectorPath = "$env:USERPROFILE\Downloads\Appium-Inspector-windows.exe"
+
+Write-Host "Downloading Appium Inspector..."
+try {
+    Invoke-WebRequest -Uri $inspectorUrl -OutFile $inspectorPath
+    Write-Host "Launching Appium Inspector installer..."
+    Start-Process -FilePath $inspectorPath -Wait
+} catch {
+    Write-Host "Failed to download or install Appium Inspector. Error: $_"
+}
+
+Write-Host "All components installed! Please restart your computer for environment variable changes to take effect."
+
