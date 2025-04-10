@@ -28,6 +28,7 @@ if (-Not (Test-Path "$cmdlineToolsPath\bin\sdkmanager.bat")) {
     if (Test-Path $cmdlineToolsPath) { Remove-Item -Recurse -Force $cmdlineToolsPath }
     if (Test-Path $cmdlineTempPath) { Remove-Item -Recurse -Force $cmdlineTempPath }
 
+    #When you download the Command Line Tools ZIP, it has cmdline-tools/bin/,but Android Studio expects cmdline-tools/latest/bin/
     Expand-Archive -Path $androidZipPath -DestinationPath $cmdlineTempPath -Force
     Move-Item "$cmdlineTempPath\cmdline-tools" $cmdlineToolsPath -Force
 }
