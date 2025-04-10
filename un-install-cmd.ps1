@@ -1,113 +1,94 @@
 # ===============================
-# Minimal Android SDK Setup (Windows) + PATH Check
-# Author: Mesaque (Extended by ChatGPT)
+# Uninstall Android SDK + Delete AVDs (Windows)
 # ===============================
 
-# Config
-$androidZipUrl = "https://dl.google.com/android/repository/commandlinetools-win-9477386_latest.zip"
-$androidZipPath = "$env:USERPROFILE\Downloads\commandlinetools.zip"
+# SDK directory to delete
 $androidSdkRoot = "C:\Android\android_sdk"
-$cmdlineTempPath = "$androidSdkRoot\cmdline-tools\temp"
-$cmdlineToolsPath = "$androidSdkRoot\cmdline-tools\latest"
-$buildToolsVersion = "34.0.0"
-$avdName = "pixel_6a_avd"
-$systemImage = "system-images;android-30;google_apis;x86_64"
 
-# Ensure SDK root
-if (-Not (Test-Path $androidSdkRoot)) {
-    New-Item -ItemType Directory -Path $androidSdkRoot -Force | Out-Null
-}
-
-# Download SDK zip
-if (-Not (Test-Path $androidZipPath)) {
-    Invoke-WebRequest -Uri $androidZipUrl -OutFile $androidZipPath
-}
-
-# Extract tools
-if (-Not (Test-Path "$cmdlineToolsPath\bin\sdkmanager.bat")) {
-    if (Test-Path $cmdlineToolsPath) { Remove-Item -Recurse -Force $cmdlineToolsPath }
-    if (Test-Path $cmdlineTempPath) { Remove-Item -Recurse -Force $cmdlineTempPath }
-
-    Expand-Archive -Path $androidZipPath -DestinationPath $cmdlineTempPath -Force
-    Move-Item "$cmdlineTempPath\cmdline-tools" $cmdlineToolsPath -Force
-}
-
-# Set environment vars (session)
-$env:ANDROID_HOME = $androidSdkRoot
-$env:ANDROID_SDK_ROOT = $androidSdkRoot
-
-# Persist environment vars
-[System.Environment]::SetEnvironmentVariable("ANDROID_HOME", $androidSdkRoot, "Machine")
-[System.Environment]::SetEnvironmentVariable("ANDROID_SDK_ROOT", $androidSdkRoot, "Machine")
-
-# Add important paths
-$pathsToAdd = @(
-    "$cmdlineToolsPath\bin",                           # avdmanager, sdkmanager
-    "$androidSdkRoot\platform-tools",                 # adb
-    "$androidSdkRoot\emulator",                       # emulator
-    "$androidSdkRoot\build-tools\$buildToolsVersion"  # aapt2
-)
-
-$currentPath = [System.Environment]::GetEnvironmentVariable("Path", "Machine") -split ";" | Where-Object { $_ -ne "" }
-$newPath = ($currentPath + $pathsToAdd | Select-Object -Unique) -join ";"
-[System.Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
-
-# Install packages
-$sdkmanager = "$cmdlineToolsPath\bin\sdkmanager.bat"
-$packages = @(
-    "cmdline-tools;latest",
-    "platform-tools",
-    "emulator",
-    "build-tools;$buildToolsVersion",
-    $systemImage
-)
-
-function Install-PackageIfMissing($pkg) {
-    $installed = & $sdkmanager --list_installed 2>&1 | Select-String $pkg
-    if (-not $installed) {
-        Write-Host "📦 Installing: $pkg"
-        & $sdkmanager $pkg --sdk_root="$androidSdkRoot"
-    } else {
-        Write-Host "✔ Already installed: $pkg"
-    }
-}
-foreach ($pkg in $packages) {
-    Install-PackageIfMissing $pkg
-}
-
-# Accept licenses
-& $sdkmanager --licenses --sdk_root="$androidSdkRoot" | ForEach-Object { $_ }
-
-# Create AVD
-$avdmanager = "$cmdlineToolsPath\bin\avdmanager.bat"
-$existingAvd = & $avdmanager list avd | Select-String $avdName
-if (-not $existingAvd) {
-    Write-Host "📱 Creating AVD: $avdName (Pixel 6a)"
-    & $avdmanager create avd -n $avdName --device "pixel_6a" -k $systemImage --force
-} else {
-    Write-Host "✔ AVD already exists: $avdName"
-}
-
-# =======================
-# ✅ Check PATH and Tools
-# =======================
-Write-Host "`n🔍 Verifying tools in PATH..."
-
-function Check-Tool($name, $command, $args = "--version") {
+# =====================
+# Kill SDK Processes
+# =====================
+Write-Host "🔫 Killing Android SDK-related processes..."
+$processes = @("adb.exe", "emulator.exe", "qemu-system-x86_64.exe")
+foreach ($proc in $processes) {
     try {
-        Write-Host "🔧 Checking $name..."
-        & $command $args
+        taskkill /F /IM $proc | Out-Null
+        Write-Host "✅ Killed: $proc"
     } catch {
-        Write-Host "❌ $name not available in PATH or failed to run"
+        Write-Host "ℹ️ Could not kill or not running: $proc"
     }
 }
 
-Check-Tool "adb" "version"
-Check-Tool "emulator" "emulator" "-version"
-Check-Tool "avdmanager" "avdmanager" "-h"
-Check-Tool "aapt2" "aapt2" "-v"
+Start-Sleep -Seconds 2
 
-# Final message
-Write-Host "`n🎉 Setup complete!"
-Write-Host "➡ Restart PowerShell or your PC to apply PATH changes"
-Write-Host "➡ Start the emulator using: emulator @$avdName"
+# =====================
+# Remove SDK Directory
+# =====================
+Write-Host "`n🗑️ Removing SDK directory: $androidSdkRoot"
+if (Test-Path $androidSdkRoot) {
+    try {
+        Remove-Item -Recurse -Force $androidSdkRoot
+        Write-Host "✅ SDK directory removed"
+    } catch {
+        Write-Host "⚠️ Could not fully delete SDK directory:"
+        Write-Host $_.Exception.Message
+    }
+} else {
+    Write-Host "ℹ️ SDK directory not found"
+}
+
+# =====================
+# Remove Env Variables
+# =====================
+Write-Host "`n🧼 Removing environment variables..."
+[System.Environment]::SetEnvironmentVariable("ANDROID_HOME", $null, "Machine")
+[System.Environment]::SetEnvironmentVariable("ANDROID_SDK_ROOT", $null, "Machine")
+Write-Host "✅ Removed ANDROID_HOME and ANDROID_SDK_ROOT"
+
+# =====================
+# Clean PATH
+# =====================
+Write-Host "`n🧹 Cleaning PATH entries..."
+$currentPath = [System.Environment]::GetEnvironmentVariable("Path", "Machine") -split ";" | Where-Object { $_ -ne "" }
+$cleanedPath = $currentPath | Where-Object { $_ -notlike "$androidSdkRoot*" }
+$newPath = ($cleanedPath | Select-Object -Unique) -join ";"
+[System.Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
+Write-Host "✅ Cleaned up PATH entries"
+
+# =====================
+# Delete AVDs (.android)
+# =====================
+$androidHome = Join-Path $env:USERPROFILE ".android"
+$avdDir = Join-Path $androidHome "avd"
+
+Write-Host "`n🗑️ Deleting AVDs from: $avdDir"
+if (Test-Path $avdDir) {
+    try {
+        Remove-Item -Recurse -Force $avdDir
+        Write-Host "✅ AVDs removed successfully"
+    } catch {
+        Write-Host "⚠️ Failed to delete AVDs:"
+        Write-Host $_.Exception.Message
+    }
+} else {
+    Write-Host "ℹ️ No AVDs found at: $avdDir"
+}
+
+# =====================
+# Delete .android .ini Configs
+# =====================
+$configFiles = Get-ChildItem -Path $androidHome -Filter "*.ini" -ErrorAction SilentlyContinue
+foreach ($file in $configFiles) {
+    try {
+        Remove-Item $file.FullName -Force
+        Write-Host "🧹 Removed config: $($file.Name)"
+    } catch {
+        Write-Host "⚠️ Could not delete: $($file.Name)"
+    }
+}
+
+# =====================
+# Done!
+# =====================
+Write-Host "`n✅ Uninstallation Complete!"
+Write-Host "🔁 Please restart PowerShell or your PC to apply environment changes."
