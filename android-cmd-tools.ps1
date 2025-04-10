@@ -1,5 +1,4 @@
-
-# Config
+# Configuration
 $androidZipUrl = "https://dl.google.com/android/repository/commandlinetools-win-9477386_latest.zip"
 $androidZipPath = "$env:USERPROFILE\Downloads\commandlinetools.zip"
 $androidSdkRoot = "C:\Android\android_sdk"
@@ -14,51 +13,47 @@ if (-Not (Test-Path $androidSdkRoot)) {
     New-Item -ItemType Directory -Path $androidSdkRoot -Force | Out-Null
 }
 
-# Download SDK zip
+# Download SDK ZIP if not present
 if (-Not (Test-Path $androidZipPath)) {
     Invoke-WebRequest -Uri $androidZipUrl -OutFile $androidZipPath
 }
 
-# Extract tools
+# Extract Command Line Tools
 if (-Not (Test-Path "$cmdlineToolsPath\bin\sdkmanager.bat")) {
     if (Test-Path $cmdlineToolsPath) { Remove-Item -Recurse -Force $cmdlineToolsPath }
     if (Test-Path $cmdlineTempPath) { Remove-Item -Recurse -Force $cmdlineTempPath }
 
-    #When you download the Command Line Tools ZIP, it has cmdline-tools/bin/,but Android Studio expects cmdline-tools/latest/bin/
     Expand-Archive -Path $androidZipPath -DestinationPath $cmdlineTempPath -Force
     Move-Item "$cmdlineTempPath\cmdline-tools" $cmdlineToolsPath -Force
 }
 
-# Set environment vars (session)
-$env:ANDROID_HOME = $androidSdkRoot
-$env:ANDROID_SDK_ROOT = $androidSdkRoot
-
+# Environment variables for session
 $androidEmulatorHome = "$androidSdkRoot\.android"
 $androidAvdHome = "$androidEmulatorHome\avd"
 
+$env:ANDROID_HOME = $androidSdkRoot
+$env:ANDROID_SDK_ROOT = $androidSdkRoot
 $env:ANDROID_EMULATOR_HOME = $androidEmulatorHome
 $env:ANDROID_AVD_HOME = $androidAvdHome
 
-# Persist environment vars (machine level)
+# Persist environment variables (machine-level)
 [System.Environment]::SetEnvironmentVariable("ANDROID_HOME", $androidSdkRoot, "Machine")
 [System.Environment]::SetEnvironmentVariable("ANDROID_SDK_ROOT", $androidSdkRoot, "Machine")
 [System.Environment]::SetEnvironmentVariable("ANDROID_EMULATOR_HOME", $androidEmulatorHome, "Machine")
 [System.Environment]::SetEnvironmentVariable("ANDROID_AVD_HOME", $androidAvdHome, "Machine")
 
-
-# Add important paths
+# Add tools to system PATH
 $pathsToAdd = @(
-    "$cmdlineToolsPath\bin",                           # avdmanager, sdkmanager
-    "$androidSdkRoot\platform-tools",                 # adb
-    "$androidSdkRoot\emulator",                       # emulator
-    "$androidSdkRoot\build-tools\$buildToolsVersion"  # aapt2
+    "$cmdlineToolsPath\bin",
+    "$androidSdkRoot\platform-tools",
+    "$androidSdkRoot\emulator",
+    "$androidSdkRoot\build-tools\$buildToolsVersion"
 )
-
 $currentPath = [System.Environment]::GetEnvironmentVariable("Path", "Machine") -split ";" | Where-Object { $_ -ne "" }
 $newPath = ($currentPath + $pathsToAdd | Select-Object -Unique) -join ";"
 [System.Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
 
-# Install packages
+# Install required SDK packages
 $sdkmanager = "$cmdlineToolsPath\bin\sdkmanager.bat"
 $packages = @(
     "cmdline-tools;latest",
@@ -83,22 +78,27 @@ foreach ($pkg in $packages) {
     Install-PackageIfMissing $pkg
 }
 
-
-# Create AVD
-Write-Host "Must Yes to install"
+# Create AVD if not exists
 $avdmanager = "$cmdlineToolsPath\bin\avdmanager.bat"
 $existingAvd = & $avdmanager list avd | Select-String $avdName
+
 if (-not $existingAvd) {
     Write-Host "📱 Creating AVD: $avdName (Pixel 6a)"
-    & $avdmanager create avd -n $avdName --device "pixel_6a" -k $systemImage --force
+    $envVars = @{
+        ANDROID_EMULATOR_HOME = $androidEmulatorHome
+        ANDROID_AVD_HOME      = $androidAvdHome
+    }
+    Start-Process -FilePath $avdmanager `
+        -ArgumentList "create", "avd", "-n", $avdName, "--device", "pixel_6a", "-k", $systemImage, "--force" `
+        -Wait -NoNewWindow -PassThru `
+        -Environment $envVars
 } else {
-    Write-Host " AVD already exists: $avdName"
+    Write-Host "✔ AVD already exists: $avdName"
 }
 
-Write-Host "Verifying tools in PATH..."
-
-adb version
-avdmanager -h
-aapt2 version
-emulator -list
-
+# Verify tool installation
+Write-Host "`n🔍 Verifying tool installations..."
+& "$androidSdkRoot\platform-tools\adb.exe" version
+& "$cmdlineToolsPath\bin\avdmanager.bat" -h
+& "$androidSdkRoot\build-tools\$buildToolsVersion\aapt2.exe" version
+& "$androidSdkRoot\emulator\emulator.exe" -list-avds
